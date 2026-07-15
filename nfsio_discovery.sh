@@ -20,8 +20,11 @@ fail() {
 mounts_json=$(
     "$FINDMNT_BIN" --json --list --types nfs,nfs4 --output TARGET 2>&1
 ) || {
-    [[ -z "${mounts_json:-}" ]] && mounts_json='{"filesystems":[]}' || \
+    if [[ -z "${mounts_json:-}" ]]; then
+        mounts_json='{"filesystems":[]}'
+    else
         fail "unable to read the NFS mount table: $mounts_json"
+    fi
 }
 
 [[ -n "$mounts_json" ]] || mounts_json='{"filesystems":[]}'
