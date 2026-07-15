@@ -1,44 +1,118 @@
-# Zabbix LLD Template for NFS client iostat statistics
+# Zabbix template for NFS client I/O statistics
 
-![Docker stuff](https://img.shields.io/badge/%F0%9F%90%B3-useful%20stuff-lightgray)
-![PizzaWare](https://img.shields.io/badge/%F0%9F%8D%95-PizzaWare-orange)
-![Tea powered](https://img.shields.io/badge/%F0%9F%8D%B5-tea%20powered-yellowgreen)
+Low-level discovery and templates for monitoring Linux NFS client performance with `nfsiostat`.
 
-This is a fork of https://github.com/pdacity/zabbix_nfs_client_iostat with bugfixes, additional metrics, and support for newer Zabbix version.
+Version 1.5.0 (2026-07-15)
 
-> Version 1.4 - (20250403)
+## Supported templates
 
-for Zabbix 3.x, 5.x, 7.x
+| Zabbix version | Template | Collection mode |
+| --- | --- | --- |
+| 3.x | `template_nfsio_zabbix3.xml` | Legacy per-metric collection |
+| 5.x and 6.x | `template_nfsio_zabbix5.xml` | One master sample with dependent items |
+| 7.0+ | `template_nfsio_zabbix7.xml` | One master sample with dependent items |
+| 7.0+ | `template_nfsio_zabbix7.yaml` | Same template in YAML export format |
 
-Zabbix 6.x is not tested, but should be compatible with 5.x template
+The XML and YAML Zabbix 7 templates are alternatives. Import only one of them.
 
-zabbix-agent must be installed on the monitored node
+The Zabbix 5 template is expected to import on Zabbix 6, but Zabbix 6 is not currently included in automated import testing. The Zabbix 3 template remains available for compatibility and uses the older, less efficient per-metric checks.
 
-nfs-utils packet MUST be installed
+## Requirements
 
-## Install
+- Bash 4 or newer
+- `nfs-utils` (`nfsiostat`)
+- `util-linux` (`findmnt`)
+- `jq`
+- Zabbix agent or Zabbix agent 2
 
-* copy `nfsio_perf.sh` and `nfsio_discovery.sh` into `/etc/zabbix/bin`
-* copy `userparameter_nfsio.conf` into `/etc/zabbix/zabbix_agent.d`
-* import Template
-* restart zabbix_agent
+`UnsafeUserParameters` does not need to be enabled.
 
-## Files
+## Installation
 
-* nfsio_discovery.sh - LLD for NFS mountpoints autodiscovery
-* nfsio_perf.sh - collect metrics
-* template_nfsio.xml - Zabbix template
-* userparameter_nfsio.conf - Zabbix userparameters file
+1. Install the scripts with executable permissions:
 
-## References
+   ```sh
+   install -d -m 0755 /etc/zabbix/bin
+   install -m 0755 nfsio_perf.sh nfsio_discovery.sh /etc/zabbix/bin/
+   ```
 
-* yumaojun03/zabbix_monitor - https://github.com/yumaojun03/zabbix_monitor
-* pdacity/zabbix_nfs_client_iostat - https://github.com/pdacity/zabbix_nfs_client_iostat
+2. Copy `userparameter_nfsio.conf` into a directory included by the agent configuration. Common locations are `/etc/zabbix/zabbix_agentd.d/` for the classic agent and `/etc/zabbix/zabbix_agent2.d/` for agent 2; distribution defaults vary.
 
-## Version
+3. Restart the appropriate service:
 
-* 1.0 - initial
-* 1.1 - add "Read / Write kB/s", "Read / Write op/s" and "RPC request time" graphs into Template
-* 1.2 - get statistics for the period and not from the beginning of measurements, tnx https://github.com/alkolexx
-* 1.3 - add "queue, error, error_perc" metrics for both read & write side, add Zabbix 5.x & 7.x templates, fix bugs and typos
-* 1.4 - add empty LLD json response in nfsio_discovery.sh to avoid blank item creation
+   ```sh
+   systemctl restart zabbix-agent
+   # or
+   systemctl restart zabbix-agent2
+   ```
+
+4. Test discovery locally. Run the command as the Zabbix service account if possible:
+
+   ```sh
+   zabbix_agentd -t nfsio.discovery
+   # or
+   zabbix_agent2 -t nfsio.discovery
+   ```
+
+5. Import the template matching the Zabbix server version and link it to the monitored host.
+
+## Collection design
+
+`nfsio_discovery.sh` obtains NFS/NFSv4 mount points from `findmnt` and uses `jq` to produce escaped low-level discovery JSON. It retains the `data` wrapper required by Zabbix 3 and accepted by newer releases.
+
+For Zabbix 5 and newer, each discovered mount has one `nfsio.get[]` master item. One `nfsiostat` sample returns a JSON object containing all available metrics. The 22 numeric item prototypes use JSONPath preprocessing, so enabling latency, queue, retransmission, and error metrics does not launch additional `nfsiostat` processes.
+
+The legacy `nfsio[<mount>,<metric>]` user parameter remains available for Zabbix 3 and manual troubleshooting. Error metrics are omitted on kernels exposing RPC iostats version 1.0; modern dependent items discard those unavailable values without becoming unsupported.
+
+## Collected metrics
+
+- Total operation rate and RPC backlog
+- Read/write operations per second
+- Read/write throughput and request size
+- Read/write retransmission count and percentage
+- Read/write round-trip, execution, and queue time
+- Read/write error count and percentage when supported by the kernel
+
+The modern templates include separate, unit-consistent graph prototypes for throughput, operations, request size, RPC latency, queue time, retransmissions, and errors.
+
+## Development and validation
+
+Run the local fixture tests:
+
+```sh
+tests/run.sh
+```
+
+The Zabbix 5 XML and Zabbix 7 XML/YAML templates are generated from a shared metric definition:
+
+```sh
+python3 scripts/generate_templates.py
+python3 scripts/generate_templates.py --check
+```
+
+Template generation requires Python 3 and PyYAML. These are development dependencies only.
+
+CI validates shell syntax and style, RPC iostats 1.0/1.1 parsing, discovery JSON escaping, generated-template consistency, XML well-formedness, and YAML syntax.
+
+## Upgrade notes for 1.5
+
+- Install the new `nfsio.get[*]` user parameter before importing the updated Zabbix 5/7 template.
+- The updated Zabbix 5/7 templates change the existing metric prototypes to dependent items and quote mount-point key parameters.
+- Review template import changes before applying them to production. Existing discovered items may be updated or recreated depending on the Zabbix version and import options.
+- Zabbix 3 continues to use the legacy metric interface.
+
+## History
+
+- 1.5.0 — single-sample dependent items, robust JSON and error handling, units and corrected graphs, YAML export, tests, and CI
+- 1.4 — empty LLD response when no NFS mounts exist
+- 1.3 — queue/error metrics and Zabbix 5/7 templates
+- 1.2 — interval statistics instead of statistics since mount time
+- 1.1 — throughput, operation-rate, and RPC graphs
+- 1.0 — initial release
+
+## Credits
+
+This repository is derived from:
+
+- [pdacity/zabbix_nfs_client_iostat](https://github.com/pdacity/zabbix_nfs_client_iostat)
+- [yumaojun03/zabbix_monitor](https://github.com/yumaojun03/zabbix_monitor)

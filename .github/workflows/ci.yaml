@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install validation tools
+        run: sudo apt-get update && sudo apt-get install --yes jq libxml2-utils python3-yaml shellcheck
+
+      - name: Run fixture tests
+        run: tests/run.sh
+
+      - name: Lint shell scripts
+        run: shellcheck nfsio_discovery.sh nfsio_perf.sh tests/run.sh tests/helpers/*.sh
+
+      - name: Validate generated templates
+        run: |
+          python3 scripts/generate_templates.py --check
+          xmllint --noout template_nfsio_zabbix3.xml template_nfsio_zabbix5.xml template_nfsio_zabbix7.xml
+          python3 -c 'import pathlib, yaml; yaml.safe_load(pathlib.Path("template_nfsio_zabbix7.yaml").read_text())'

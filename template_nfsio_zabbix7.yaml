@@ -1,0 +1,535 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+  - uuid: 7df96b18c230490a9a0a9e2307226338
+    name: Templates
+  templates:
+  - uuid: 408d615ff22d40f4a2572cc011f8903d
+    template: Template NFS IO Stats
+    name: Template NFS IO Stats
+    description: NFS client statistics from nfsiostat. Modern templates collect all metrics once per mount and use dependent
+      items.
+    vendor:
+      name: CPOS-HPC
+      version: 1.5.0
+    groups:
+    - name: Templates
+    discovery_rules:
+    - uuid: 0000266c4f934139a9c0e96c9068a40e
+      name: NFS mount point discovery
+      key: nfsio.discovery
+      delay: 2m
+      lifetime: 1d
+      enabled_lifetime_type: DISABLE_NEVER
+      description: Discovers mounted NFS and NFSv4 filesystems.
+      item_prototypes:
+      - uuid: 6a1e4fcf9e4a4bb9a7de28c884f41101
+        name: '{#MOUNT_POINT}: Get NFS client statistics'
+        key: nfsio.get["{#MOUNT_POINT}"]
+        delay: 1m
+        history: '0'
+        trends: '0'
+        value_type: TEXT
+        description: Raw JSON returned by one nfsiostat sample. Used by dependent item prototypes.
+        tags:
+        - tag: Application
+          value: NFS raw
+      - uuid: 2ebc7f237cfa40d1bcfb2d4cebecff2d
+        name: '{#MOUNT_POINT}: RPC backlog'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",bklog]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        description: Average length of the RPC backlog queue.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.bklog
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 2649c5720097410192c860a3cfbf9bf6
+        name: '{#MOUNT_POINT}: Operations'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",op_s]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: ops/s
+        description: Total NFS RPC operations per second.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.op_s
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 0f805a66c2a04e48a8acf1368bf111e5
+        name: '{#MOUNT_POINT}: Read errors'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_error]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: errors
+        description: Read operations completed with an error during the sample interval. Available with RPC iostats version
+          1.1 or newer.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_error
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 75119e1dbb4543baa443cba2cb2eaa02
+        name: '{#MOUNT_POINT}: Read error rate'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_error_perc]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: '%'
+        description: Percentage of read operations completed with an error. Available with RPC iostats version 1.1 or newer.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_error_perc
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: dbcc2244995246bf9b7aef96ddaf452d
+        name: '{#MOUNT_POINT}: Read execution time'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_exe]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: ms
+        description: Average time to complete an RPC read request, including round-trip time.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_exe
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: f3ef7817bac14059a53b9c6c1ce24868
+        name: '{#MOUNT_POINT}: Read request size'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_kB_op]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: kB/op
+        description: Average kilobytes read per operation.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_kB_op
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 470f1840b99745399de8987b393b2eb0
+        name: '{#MOUNT_POINT}: Read throughput'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_kB_s]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: kB/s
+        description: Kilobytes read per second.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_kB_s
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 63e6db20fdfe490592a2aa9ab6aa249a
+        name: '{#MOUNT_POINT}: Read operations'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_ops_s]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: ops/s
+        description: Read operations per second.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_ops_s
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 93f1c091aa344d4c86b7ecc3a221585b
+        name: '{#MOUNT_POINT}: Read queue time'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_queue]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: ms
+        description: Average time an RPC read request waits before transmission.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_queue
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: fbc1381c6aca4a68bcfa521687003657
+        name: '{#MOUNT_POINT}: Read retransmissions'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_retry]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: retrans
+        description: Read retransmissions during the sample interval.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_retry
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 088f87604a7548fa96f8f1056d5a103b
+        name: '{#MOUNT_POINT}: Read retransmission rate'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_retry_perc]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: '%'
+        description: Read retransmissions as a percentage of read operations.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_retry_perc
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: c4d76f20f67744918233c5dfd72c5940
+        name: '{#MOUNT_POINT}: Read round-trip time'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",read_rtt]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: ms
+        description: Average RPC read request round-trip time.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.read_rtt
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 31469835ab1c4fc6bb6a52556b84bb5d
+        name: '{#MOUNT_POINT}: Write errors'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_error]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: errors
+        description: Write operations completed with an error during the sample interval. Available with RPC iostats version
+          1.1 or newer.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_error
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: a275429ccd4847ef8707d74550f0ebf2
+        name: '{#MOUNT_POINT}: Write error rate'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_error_perc]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: '%'
+        description: Percentage of write operations completed with an error. Available with RPC iostats version 1.1 or newer.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_error_perc
+          error_handler: DISCARD_VALUE
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: da18e12fd2474b10bd94b0b46747343a
+        name: '{#MOUNT_POINT}: Write execution time'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_exe]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: ms
+        description: Average time to complete an RPC write request, including round-trip time.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_exe
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: ae0c34e9a50141548559429c18757d6b
+        name: '{#MOUNT_POINT}: Write request size'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_kB_op]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: kB/op
+        description: Average kilobytes written per operation.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_kB_op
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 80a1fe9747a4476d9be22d1c4420b8a4
+        name: '{#MOUNT_POINT}: Write throughput'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_kB_s]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: kB/s
+        description: Kilobytes written per second.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_kB_s
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: b17595fa91ba4f80aa876f8f6b6970e3
+        name: '{#MOUNT_POINT}: Write operations'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_ops_s]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: ops/s
+        description: Write operations per second.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_ops_s
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 93c3835b796c4da2bcb3a81661ea57cb
+        name: '{#MOUNT_POINT}: Write queue time'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_queue]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: ms
+        description: Average time an RPC write request waits before transmission.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_queue
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 52a8bfbb904f444bac620ea8d3c4401e
+        name: '{#MOUNT_POINT}: Write retransmissions'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_retry]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: retrans
+        description: Write retransmissions during the sample interval.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_retry
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: 650fd69737df4ce78d614d187ac7e4f6
+        name: '{#MOUNT_POINT}: Write retransmission rate'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_retry_perc]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: '%'
+        description: Write retransmissions as a percentage of write operations.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_retry_perc
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      - uuid: f24f8c53a22a49cb9502f6817427e87b
+        name: '{#MOUNT_POINT}: Write round-trip time'
+        type: DEPENDENT
+        key: nfsio["{#MOUNT_POINT}",write_rtt]
+        delay: '0'
+        history: 30d
+        value_type: FLOAT
+        units: ms
+        description: Average RPC write request round-trip time.
+        preprocessing:
+        - type: JSONPATH
+          parameters:
+          - $.write_rtt
+        master_item:
+          key: nfsio.get["{#MOUNT_POINT}"]
+        tags:
+        - tag: Application
+          value: NFS
+      graph_prototypes:
+      - uuid: 9dd49be64abf43819692e73097d962b2
+        name: '{#MOUNT_POINT}: Request size'
+        graph_items:
+        - color: 1A7C11
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",read_kB_op]
+        - color: F63100
+          sortorder: '1'
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",write_kB_op]
+      - uuid: b5b2a411d05145779b9c79ff1ba8e381
+        name: '{#MOUNT_POINT}: Throughput'
+        graph_items:
+        - color: 1A7C11
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",read_kB_s]
+        - color: F63100
+          sortorder: '1'
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",write_kB_s]
+      - uuid: e8cc0748f2e84e52ba221c5b7dce2d3d
+        name: '{#MOUNT_POINT}: Operations'
+        graph_items:
+        - color: 1A7C11
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",read_ops_s]
+        - color: F63100
+          sortorder: '1'
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",write_ops_s]
+      - uuid: 749c205dfdc64c21b082d1c9f457ad70
+        name: '{#MOUNT_POINT}: RPC latency'
+        graph_items:
+        - color: 1A7C11
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",read_rtt]
+        - color: F63100
+          sortorder: '1'
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",write_rtt]
+        - color: 2774A4
+          sortorder: '2'
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",read_exe]
+        - color: AA00AA
+          sortorder: '3'
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",write_exe]
+      - uuid: a0c4c2b485dd48a8bc9563c46e0406e9
+        name: '{#MOUNT_POINT}: RPC queue time'
+        graph_items:
+        - color: 1A7C11
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",read_queue]
+        - color: F63100
+          sortorder: '1'
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",write_queue]
+      - uuid: 3b6e18df38f14f87a33c4ca3e45c8cc7
+        name: '{#MOUNT_POINT}: Retransmissions'
+        graph_items:
+        - color: 1A7C11
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",read_retry_perc]
+        - color: F63100
+          sortorder: '1'
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",write_retry_perc]
+      - uuid: 70d6e9fa94304b4da3eb14a34cfe4981
+        name: '{#MOUNT_POINT}: Errors'
+        graph_items:
+        - color: 1A7C11
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",read_error_perc]
+        - color: F63100
+          sortorder: '1'
+          item:
+            host: Template NFS IO Stats
+            key: nfsio["{#MOUNT_POINT}",write_error_perc]
+    tags:
+    - tag: Application
+      value: NFS

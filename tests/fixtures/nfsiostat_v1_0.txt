@@ -1,0 +1,9 @@
+server:/export mounted on /mock nfs:
+
+           ops/s       rpc bklog
+           5.000           0.500
+
+read:              ops/s            kB/s           kB/op         retrans    avg RTT (ms)    avg exe (ms)  avg queue (ms)
+                   2.000         200.000         100.000        1 (2.0%)           1.000           2.000           0.100
+write:             ops/s            kB/s           kB/op         retrans    avg RTT (ms)    avg exe (ms)  avg queue (ms)
+                   3.000         300.000         100.000        2 (3.0%)           2.000           3.000           0.200

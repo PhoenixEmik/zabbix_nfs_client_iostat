@@ -1,0 +1,19 @@
+server:/export mounted on /mock nfs:
+
+           ops/s       rpc bklog
+           1.000           0.010
+
+read:              ops/s            kB/s           kB/op         retrans    avg RTT (ms)    avg exe (ms)  avg queue (ms)          errors
+                   1.000          10.000          10.000        1 (1.0%)           1.000           2.000           0.500        1 (1.0%)
+write:             ops/s            kB/s           kB/op         retrans    avg RTT (ms)    avg exe (ms)  avg queue (ms)          errors
+                   2.000          20.000          10.000        2 (2.0%)           2.000           3.000           0.750        2 (2.0%)
+
+server:/export mounted on /mock nfs:
+
+           ops/s       rpc bklog
+          12.345           0.125
+
+read:              ops/s            kB/s           kB/op         retrans    avg RTT (ms)    avg exe (ms)  avg queue (ms)          errors
+                   3.250         400.500         123.231        4 (5.5%)           1.250           2.500           0.125        2 (2.5%)
+write:             ops/s            kB/s           kB/op         retrans    avg RTT (ms)    avg exe (ms)  avg queue (ms)          errors
+                   4.500         800.250         177.833        6 (7.5%)           2.250           3.500           0.250        3 (3.5%)

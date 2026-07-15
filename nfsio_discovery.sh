@@ -1,32 +1,31 @@
-#!/bin/bash
-# ============================================================
-# Author: Dmitry Malinin 
-# E.mail: dmitry@malinin.com
-# Blog: http://zabbix.guru
-# Filename: nfsio_discovery.sh
-# Modified: 2024-09-26 
-# Description: Discovery NFS mountpoints.
-#
-# Parameters:
-#
-# NONE
-#
-# ===========================================================
+#!/usr/bin/env bash
 
-array="$(findmnt -lo target -n -t nfs,nfs4)"
+set -u
+set -o pipefail
 
-# If array is empty, return empty JSON
-if [[ -z "$array" ]]; then
-    printf '%s' '{"data":[]}'
-    exit 0
-fi
+FINDMNT_BIN=${FINDMNT_BIN:-/usr/bin/findmnt}
+JQ_BIN=${JQ_BIN:-/usr/bin/jq}
 
-comma=""
-printf '%s' '{"data":['
+fail() {
+    printf 'nfsio discovery: %s\n' "$*" >&2
+    exit 1
+}
 
-while IFS= read -r line ; do
-        printf '%s' "$comma{\"{#MOUNT_POINT}\":\"$line\"}"
-        comma=","
-done <<< "$array"
+[[ -x "$FINDMNT_BIN" ]] || fail "findmnt is not executable: $FINDMNT_BIN"
+[[ -x "$JQ_BIN" ]] || fail "jq is not executable: $JQ_BIN"
 
-printf '%s' ']}'
+# findmnt performs the filesystem-name escaping and jq performs the JSON/LLD
+# serialization. The legacy data wrapper keeps the output compatible with
+# Zabbix 3 while remaining accepted by newer Zabbix versions.
+mounts_json=$(
+    "$FINDMNT_BIN" --json --list --types nfs,nfs4 --output TARGET 2>&1
+) || {
+    [[ -z "${mounts_json:-}" ]] && mounts_json='{"filesystems":[]}' || \
+        fail "unable to read the NFS mount table: $mounts_json"
+}
+
+[[ -n "$mounts_json" ]] || mounts_json='{"filesystems":[]}'
+
+"$JQ_BIN" --compact-output \
+    '{data: [(.filesystems // [])[] | {"{#MOUNT_POINT}": .target}]}' \
+    <<< "$mounts_json" || fail 'findmnt returned invalid JSON'
