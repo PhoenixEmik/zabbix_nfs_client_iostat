@@ -8,14 +8,19 @@ Version 1.5.0 (2026-07-15)
 
 | Zabbix version | Template | Collection mode |
 | --- | --- | --- |
-| 3.x | `template_nfsio_zabbix3.xml` | Legacy per-metric collection |
 | 5.x and 6.x | `template_nfsio_zabbix5.xml` | One master sample with dependent items |
 | 7.0+ | `template_nfsio_zabbix7.xml` | One master sample with dependent items |
 | 7.0+ | `template_nfsio_zabbix7.yaml` | Same template in YAML export format |
 
 The XML and YAML Zabbix 7 templates are alternatives. Import only one of them.
 
-The Zabbix 5 template is expected to import on Zabbix 6, but Zabbix 6 is not currently included in automated import testing. The Zabbix 3 template remains available for compatibility and uses the older, less efficient per-metric checks.
+The Zabbix 5 template is expected to import on Zabbix 6, but Zabbix 6 is not currently included in automated import testing.
+
+## Deprecated Zabbix 3 template
+
+`template_nfsio_zabbix3.xml` is deprecated and retained only for existing installations that cannot yet upgrade. It uses the expensive legacy per-metric collection path and receives no new metrics, graphs, or other feature work. Only critical compatibility or security fixes will be considered.
+
+New deployments should use Zabbix 5 or newer. Existing Zabbix 3 deployments should plan to upgrade and migrate to one of the dependent-item templates.
 
 ## Requirements
 
@@ -58,11 +63,11 @@ The Zabbix 5 template is expected to import on Zabbix 6, but Zabbix 6 is not cur
 
 ## Collection design
 
-`nfsio_discovery.sh` obtains NFS/NFSv4 mount points from `findmnt` and uses `jq` to produce escaped low-level discovery JSON. It retains the `data` wrapper required by Zabbix 3 and accepted by newer releases.
+`nfsio_discovery.sh` obtains NFS/NFSv4 mount points from `findmnt` and uses `jq` to produce escaped low-level discovery JSON. It retains the legacy `data` wrapper for the deprecated Zabbix 3 template and compatibility with existing installations.
 
 For Zabbix 5 and newer, each discovered mount has one `nfsio.get[]` master item. One `nfsiostat` sample returns a JSON object containing all available metrics. The 22 numeric item prototypes use JSONPath preprocessing, so enabling latency, queue, retransmission, and error metrics does not launch additional `nfsiostat` processes.
 
-The legacy `nfsio[<mount>,<metric>]` user parameter remains available for Zabbix 3 and manual troubleshooting. Error metrics are omitted on kernels exposing RPC iostats version 1.0; modern dependent items discard those unavailable values without becoming unsupported.
+The legacy `nfsio[<mount>,<metric>]` user parameter remains available for the deprecated Zabbix 3 template and manual troubleshooting. Error metrics are omitted on kernels exposing RPC iostats version 1.0; modern dependent items discard those unavailable values without becoming unsupported.
 
 ## Collected metrics
 
@@ -99,11 +104,11 @@ CI validates shell syntax and style, RPC iostats 1.0/1.1 parsing, discovery JSON
 - Install the new `nfsio.get[*]` user parameter before importing the updated Zabbix 5/7 template.
 - The updated Zabbix 5/7 templates change the existing metric prototypes to dependent items and quote mount-point key parameters.
 - Review template import changes before applying them to production. Existing discovered items may be updated or recreated depending on the Zabbix version and import options.
-- Zabbix 3 continues to use the legacy metric interface.
+- The Zabbix 3 template is deprecated. It remains compatible with the legacy metric interface but receives no new features.
 
 ## History
 
-- 1.5.0 — single-sample dependent items, robust JSON and error handling, units and corrected graphs, YAML export, tests, and CI
+- 1.5.0 — single-sample dependent items, robust JSON and error handling, units and corrected graphs, YAML export, tests and CI; deprecated the Zabbix 3 template
 - 1.4 — empty LLD response when no NFS mounts exist
 - 1.3 — queue/error metrics and Zabbix 5/7 templates
 - 1.2 — interval statistics instead of statistics since mount time

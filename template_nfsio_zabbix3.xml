@@ -10,7 +10,9 @@
     <templates>
         <template>
             <template>Template NFS io</template>
-            <description>Author: Dmitry Malinin&#13;
+            <description>DEPRECATED: This Zabbix 3 template is retained for existing deployments only. It receives no new features. Migrate to Zabbix 5 or newer and use the dependent-item template.&#13;
+&#13;
+Author: Dmitry Malinin&#13;
 E.mail: dmitry@malinin.com&#13;
 Blog: http://zabbix.guru&#13;
 &#13;
